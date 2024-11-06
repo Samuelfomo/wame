@@ -39,7 +39,7 @@ const errorMessage = ref('');
 
 onMounted(async () => {
   try {
-    const response = await fetch('http://192.168.100.103:3000/lexicon/list_all');
+    const response = await fetch('http://${API_ENDPOINT}/lexicon/list_all');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }

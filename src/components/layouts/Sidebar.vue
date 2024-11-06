@@ -207,7 +207,7 @@ const inactiveClass = ref(
             <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z" />
             <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z" />
           </svg>
-          <button class="text-white text-cyan-500"> <i class="mx-4 bg-green-400" ></i>logout</button>
+          <button class="text-red-600"> <i class="mx-4 bg-green-400" ></i>logout</button>
 
         </router-link>
       </footer>

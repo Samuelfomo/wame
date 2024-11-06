@@ -152,7 +152,7 @@ const guidToDelete = ref(null);
 
 async function fetchLexicons() {
   try {
-    const response = await axios.get('http://192.168.100.103:3000/lexicon/list_all');
+    const response = await axios.get('http://${API_ENDPOINT}/lexicon/list_all');
     lexicons.value = response.data.response;
     $(document).ready(() => $('#lexicon-table').DataTable());
   } catch (error) {
@@ -206,7 +206,7 @@ function confirmDelete(guid) {
 
 async function deleteLexicon() {
   try {
-    await axios.put('http://192.168.100.103:3000/lexicon/delete', { guid: guidToDelete.value });
+    await axios.put('http://${API_ENDPOINT}/lexicon/delete', { guid: guidToDelete.value });
     message.value = 'Lexicon deleted successfully';
     closeModal();
     await fetchLexicons();

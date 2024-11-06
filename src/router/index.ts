@@ -55,6 +55,7 @@ import Modal from '../views/Modal.vue'
 import Card from '../views/Card.vue'
 import Blank from '@/views/Blank.vue'
 
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',

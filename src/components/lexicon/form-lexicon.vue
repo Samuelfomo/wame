@@ -72,7 +72,7 @@ export default {
   methods: {
     async registerLexicon() {
       try {
-        const response = await axios.post('http://192.168.100.103:3000/lexicon/add', {
+        const response = await axios.post('http://${API_ENDPOINT}/lexicon/add', {
           reference: this.reference,
           english: this.english,
           french: this.french,

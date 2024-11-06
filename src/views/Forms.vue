@@ -151,7 +151,7 @@ function register() {
                 <label class="text-gray-700" for="passwordConfirmation">Password Confirmation</label>
                 <input
                   v-model="user.confirm"
-                  class="w-full mt-2 border-gray-200 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500"
+                  clas  s="w-full mt-2 border-gray-200 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500"
                   type="password"
                 >
               </div>

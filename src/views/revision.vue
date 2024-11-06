@@ -19,7 +19,8 @@
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">French</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">English</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Reference</th>
-          <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Actions</th>
+          <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Action</th>
+
         </tr>
         </thead>
         <tbody>
@@ -29,15 +30,20 @@
               class="py-2 px-4 border-b border-gray-300"
               type="checkbox"
               v-model="selectedLexicons"
-              :value="lexicon"
+              :value="lexicon.guid"
             />
           </td>
           <td class="py-2 px-4 border-b border-gray-300">{{ lexicon.french }}</td>
           <td class="py-2 px-4 border-b border-gray-300">{{ lexicon.english }}</td>
           <td class="py-2 px-4 border-b border-gray-300">{{ lexicon.reference }}</td>
-          <td class="py-2 px-4 border-b border-gray-300 flex space-x-2">
-            <button @click="editLexicon(lexicon)" class="text-blue-600 hover:text-blue-800">Edit</button>
-            <button @click="confirmDelete(lexicon.guid)" class="text-red-600 hover:text-red-800">Delete</button>
+          <td class="flex justify-center mb-4">
+            <select @change="handleSelectAction" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
+              <option value="">Choose an action</option>
+              <option v-if="selectedLexicons.length === 0" value="add">Add</option>
+              <option v-if="selectedLexicons.length === 1" value="edit">Edit</option>
+              <option v-if="selectedLexicons.length > 0" value="delete">Delete</option>
+              <option v-if="selectedLexicons.length === 1" value="copy">Copy</option>
+            </select>
           </td>
         </tr>
         </tbody>
@@ -53,7 +59,7 @@
           <button @click="deleteLexicon" class="confirm-button">Confirm</button>
         </div>
       </div>
-    </div>
+    </div><br/><br/>
 
     <!-- Registration Form -->
     <div class="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -145,6 +151,8 @@ const english = ref('');
 const reference = ref('');
 const showDeleteModal = ref(false);
 const guidToDelete = ref(null);
+const selectAll = ref(false);
+const selectedLexicons = ref([]);
 
 // Fonction pour convertir en CamelCase
 function toOpenCamelCase(str) {
@@ -167,7 +175,7 @@ watch(english, (newValue) => {
 
 async function fetchLexicons() {
   try {
-    const response = await axios.get('http://192.168.100.103:3000/lexicon/list_all');
+    const response = await axios.get('http://${API_ENDPOINT}/lexicon/list_all');
     lexicons.value = response.data.response;
     $(document).ready(() => $('#lexicon-table').DataTable());
   } catch (error) {
@@ -219,7 +227,7 @@ function confirmDelete(guid) {
 
 async function deleteLexicon() {
   try {
-    await axios.put('http://192.168.100.103:3000/lexicon/delete', { guid: guidToDelete.value });
+    await axios.put('http://${API_ENDPOINT}/lexicon/delete', { guid: guidToDelete.value });
     message.value = 'Lexicon deleted successfully';
     closeModal();
     await fetchLexicons();
@@ -240,14 +248,58 @@ function copyToClipboard(text) {
   tempInput.select();
   document.execCommand("copy");
   document.body.removeChild(tempInput);
-  message.value = "Reference copied to clipboard!";
+  message.value = "Référence copiée dans le presse-papiers!";
 }
+
 
 function resetForm() {
   guid.value = null;
   english.value = '';
   french.value = '';
   portable.value = false;
+}
+function toggleSelectAll() {
+  if (selectAll.value) {
+    selectedLexicons.value = lexicons.value.map(lexicon => lexicon.guid);
+  } else {
+    selectedLexicons.value = [];
+  }
+}
+
+function handleSelectAction(event) {
+  const action = event.target.value;
+
+  switch (action) {
+    case 'add':
+      redirectToAddForm();
+      break;
+    case 'edit':
+      if (selectedLexicons.value.length === 1) {
+        const lexicon = lexicons.value.find(lex => lex.guid === selectedLexicons.value[0]);
+        editLexicon(lexicon);
+      } else {
+        alert("Sélectionnez une seule entrée pour l'éditer.");
+      }
+      break;
+    case 'delete':
+      confirmDelete(selectedLexicons.value);
+      break;
+    case 'copy':
+      if (selectedLexicons.value.length === 1) {
+        const lexicon = lexicons.value.find(lex => lex.guid === selectedLexicons.value[0]);
+        copyToClipboard(lexicon.reference);
+      } else {
+        alert("Sélectionnez une seule entrée pour copier.");
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+function redirectToAddForm() {
+  resetForm();  // Réinitialise les champs du formulaire
+  window.scrollTo({ top: 0, behavior: 'smooth' }); // Remonte en haut de la page pour voir le formulaire
 }
 
 onMounted(fetchLexicons);
@@ -298,6 +350,7 @@ onMounted(fetchLexicons);
   width: 100%;
 }
 </style>
+
 
 <!--<template xmlns="http://www.w3.org/1999/html">-->
 
