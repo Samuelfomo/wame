@@ -6,10 +6,10 @@
       <div class="flex justify-between items-center mb-6">
         <h4 class="text-xl font-semibold text-gray-700">Liste des Contacts</h4>
         <div class="flex space-x-4">
-          <span class="text-blue-500 text-xl font-black">AJOUTER</span>
+          <span class="text-black-500 text-xl font-black">AJOUTER</span>
           <button
             @click="openAddModal"
-            class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
+            class="p-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center"
             title="Ajouter un Nouveau Contact"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
