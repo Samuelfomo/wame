@@ -15,14 +15,14 @@
       </div>
     </TransitionGroup>
   </div>
-  <div class="p-8 bg-gray-100 min-h-screen">
+  <div class="p-10 bg-gray-100 min-h-screen">
     <h3 class="text-3xl font-semibold text-gray-800 mb-6">Gestion du Lexique</h3>
 
-    <div class="bg-white p-6 rounded-lg shadow-md">
+    <div class="bg-white p-12 rounded-lg shadow-md min-h-screen">
       <div class="flex justify-between items-center mb-6">
         <h4 class="text-xl font-semibold text-gray-700">Liste des Lexiques</h4>
         <div class="flex space-x-4">
-          <span class="text-blue-500 text-xl font-black">AJOUTER</span>
+          <!--          <span class="text-blue-500 text-xl font-black">AJOUTER</span>-->
           <button
             @click="openAddModal"
             class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
@@ -51,7 +51,7 @@
       <table id="lexicon-table" class="min-w-full bg-white rounded table-class">
         <thead>
         <tr>
-          <th></th>
+          <!--          <th></th>-->
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Référence</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Français</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Anglais</th>
@@ -60,14 +60,14 @@
         </thead>
         <tbody>
         <tr v-for="lexicon in lexicons" :key="lexicon.guid" class="hover:bg-gray-50">
-          <td>
-            <input
-              class="py-2 px-4 border-b border-gray-300"
-              type="checkbox"
-              v-model="selectedLexicons"
-              :value="lexicon.guid"
-            />
-          </td>
+          <!--          <td>-->
+          <!--            <input-->
+          <!--              class="py-2 px-4 border-b border-gray-300"-->
+          <!--              type="checkbox"-->
+          <!--              v-model="selectedLexicons"-->
+          <!--              :value="lexicon.guid"-->
+          <!--            />-->
+          <!--          </td>-->
           <td class="py-2 px-4 border-b border-gray-300" @click="editLexicon(lexicon)">
             <span v-if="lexicon.portable" class="inline-block w-2.5 h-2.5 rounded-full bg-blue-600 mr-2 absolute"></span>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -77,7 +77,7 @@
           <td class="py-2 px-4 border-b border-gray-300" @click="editLexicon(lexicon)">{{ lexicon.english }}</td>
           <td class="py-2 px-4 border-b border-gray-300">
             <div class="relative">
-              <button @click.stop="toggleMenu(lexicon.guid)" class="p-1 hover:bg-gray-100 rounded">
+              <button @click.stop="toggleMenu(lexicon.guid)" class="p-1 hover:bg-gray-100 rounded float-right">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                 </svg>
@@ -179,7 +179,7 @@
 <script setup lang="ts">
 import axios from 'axios';
 import { ref, onMounted, watch, nextTick } from 'vue';
-import '../../constant';
+import "../../constant";
 import { API_ENDPOINT } from '../../constant';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net';
@@ -246,6 +246,22 @@ function toOpenCamelCase(str) {
     .join('');
 }
 
+// async function fetchLexicons() {
+//   try {
+//     const response = await axios.get(`${API_ENDPOINT}/lexicon/list_all`);
+//     lexicons.value = response.data.response || []; // Vérifie que la réponse est un tableau
+//     if ($.fn.DataTable.isDataTable('#lexicon-table')) {
+//       $('#lexicon-table').DataTable().destroy();
+//     }
+//     await nextTick();
+//     $("#lexicon-table").DataTable();
+//   } catch (error) {
+//     showMessage("Erreur lors de la récupération des lexiques.", 'error');
+//   } finally {
+//     isLoading.value = false;
+//   }
+// }
+
 async function fetchLexicons() {
   try {
     const response = await axios.get(`${API_ENDPOINT}/lexicon/list_all`);
@@ -254,7 +270,11 @@ async function fetchLexicons() {
       $('#lexicon-table').DataTable().destroy();
     }
     await nextTick();
-    $("#lexicon-table").DataTable();
+    $("#lexicon-table").DataTable({
+      "ordering": false, // Assurez-vous que le tri est activé
+      "pageLength": 10, // Nombre d'entrées par page par défaut
+      "lengthMenu": [10, 25, 50, 100, 200], // Options de sélection du nombre d'entrées par page
+    });
   } catch (error) {
     showMessage("Erreur lors de la récupération des lexiques.", 'error');
   } finally {
@@ -268,9 +288,11 @@ async function registerOrUpdateLexicon() {
     return;
   }
 
+  const limitedEnglish = english.value.length > 120 ? english.value.slice(0, 120) : english.value;
+
   try {
     const postData = {
-      english: english.value,
+      english: limitedEnglish,
       french: french.value,
       portable: portable.value,
       guid: guid.value
@@ -359,8 +381,19 @@ document.addEventListener('click', (event) => {
 });
 
 // Surveiller les modifications de 'english' pour mettre à jour la référence
+// watch(english, (newValue) => {
+//   reference.value = newValue ? toOpenCamelCase(newValue) : ''; // Utilisation de la fonction ici
+// });
+
+// Surveiller les modifications de 'english' pour mettre à jour la référence
 watch(english, (newValue) => {
-  reference.value = newValue ? toOpenCamelCase(newValue) : ''; // Utilisation de la fonction ici
+  if (newValue) {
+    // Limiter à 120 caractères
+    const limitedValue = newValue.length > 120 ? newValue.slice(0, 120) : newValue;
+    reference.value = toOpenCamelCase(limitedValue); // Convertir le texte limité
+  } else {
+    reference.value = ''; // Réinitialiser si le champ est vide
+  }
 });
 
 onMounted(fetchLexicons);

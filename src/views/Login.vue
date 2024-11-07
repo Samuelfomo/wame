@@ -44,7 +44,7 @@ function login() {
           <input
             v-model="email"
             type="email"
-            class="block w-full mt-1 border-gray-200 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500"
+            class="block w-full mt-1 border-gray-600 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500"
           >
         </label>
 
@@ -67,7 +67,7 @@ function login() {
 
           <div>
             <a
-              class="block text-sm text-indigo-700 fontme hover:underline"
+              class="block text-sm text-indigo-700 font hover:underline"
               href="#"
             >Forgot your password?</a>
           </div>
