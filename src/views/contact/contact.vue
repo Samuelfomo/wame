@@ -232,10 +232,10 @@
 
 <script setup lang="ts">
 import axios from 'axios';
-import { API_ENDPOINT } from '../../../constant';
 import { onMounted, ref, nextTick } from 'vue';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net';
+import {Constant} from "@/app/constant/constant";
 
 const contacts = ref([]);
 const isLoading = ref(true);
@@ -271,7 +271,7 @@ document.addEventListener('click', (event) => {
 
 async function fetchContacts() {
   try {
-    const response = await axios.get(`${API_ENDPOINT}/contact/list_all`);
+    const response = await axios.get(`${Constant.APIENDPOINT}/contact/list_all`);
     contacts.value = response.data.response || []; // Assurez-vous que la réponse est un tableau
     if ($.fn.DataTable.isDataTable('#contact-table')) {
       $('#contact-table').DataTable().destroy();
@@ -306,9 +306,10 @@ async function registerOrUpdateContact() {
       guid: guid.value
     };
 
-    await axios.post(`${API_ENDPOINT}/contact/add`, postData);
+    await axios.post(`${Constant.APIENDPOINT}/contact/add`, postData);
     message.value = guid.value ? 'Contact mis à jour avec succès !' : 'Contact enregistré avec succès !';
     await fetchContacts();
+
     closeFormModal();
   } catch (error) {
     message.value = "Erreur lors de l'enregistrement du contact.";
@@ -366,7 +367,7 @@ async function confirmDelete(guidArray) {
 
 async function deleteContact() {
   try {
-    await axios.put(`${API_ENDPOINT}/contact/delete`, { guids: guidToDelete.value });    message.value = 'Contact supprimé avec succès !';
+    await axios.put(`${Constant.APIENDPOINT}/contact/delete`, { guids: guidToDelete.value });    message.value = 'Contact supprimé avec succès !';
     await fetchContacts();
     showDeleteModal.value = false;
   } catch (error) {

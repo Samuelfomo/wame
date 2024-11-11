@@ -1,47 +1,59 @@
-import { Lexicon } from '../../Lexicon';
-import { LexiconRepository } from '../lexicon/repository/LexiconRepository';
+// src/api/lexiconAPI.ts
 
-class LexiconService {
-  public static async create(lexicon: Lexicon): Promise<Lexicon> {
-    return await LexiconRepository.create(lexicon);
-  }
-
-  public static async update(lexicon: Lexicon): Promise<Lexicon> {
-    return await LexiconRepository.update(lexicon);
-  }
-
-  public static async delete(lexicon: Lexicon): Promise<void> {
-    await LexiconRepository.delete(lexicon);
-  }
-
-  public static async getByGuid(guid: string): Promise<Lexicon | null> {
-    return await LexiconRepository.getByGuid(guid);
-  }
-
-  public static async getAll(portable?: boolean): Promise<Lexicon[]> {
-    return await LexiconRepository.getAll(portable);
-  }
-}
-
-export { LexiconService };
-
-
-async function getCities(): Promise<CitiesApiResponse> {
+import axios from 'axios';
+import {Convert } from "@/data/lexicon/service/model/lexiconApiModel";
+import   {Lexicon} from '@/data/lexicon/model/Lexicon';
+import {Constant} from "@/app/constant/constant";
+import type { Response } from "@/data/lexicon/service/model/lexiconApiModel";
+/**
+ * fetch lexicon data
+ */
+export async function fetchLexiconsFromApi(): Promise<Lexicon[] | null> {
   try {
-    const response: AxiosResponse = await axios.get(Endpoints.cities);
-    if (response.data.status === 1) {
-      return CitiesApiResponse.fromJson(response.data);
-    } else {
-      throw {
-        request: { path: '' },
-        response: {
-          request: { path: '' },
-          status: 201,
-          data: response.data
-        }
-      } as AxiosError;
-    }
+    const response = await axios.get(`${Constant.APIENDPOINT}/lexicon/list_all`);
+
+    const apiResponse = Convert.toLexiconAPIResponse(JSON.stringify(response.data));
+    return Convert.toLexiconArray(apiResponse);
+
   } catch (error) {
-    throw mapToError(error);
+    alert("Error when retrieving lexicons.");
+    return null;
   }
 }
+
+/**
+ * save lexicon
+ * @param postData
+ */
+export async function saveLexicon(postData: Response): Promise<Lexicon | null> {
+  try {
+    const response = await axios.post(`${Constant.APIENDPOINT}/lexicon/add`, postData);
+    const apiResponse = Convert.toLexiconAPIResponse(JSON.stringify(response.data));
+    return Convert.toLexicon(apiResponse);
+  } catch (error) {
+    console.error("Error during lexicon registration:", error);
+    return null;
+  }
+}
+
+export async function updateLexicon(postData: Response): Promise<Lexicon | null> {
+  try {
+    const response = await axios.post(`${Constant.APIENDPOINT}/lexicon/add`, postData);
+    const apiResponse = Convert.toLexiconAPIResponse(JSON.stringify(response.data));
+    return Convert.toLexicon(apiResponse);
+  } catch (error) {
+    console.error("Error during lexicon update:", error);
+    return null;
+  }
+}
+
+export async function delLexicon(guidArray: (string | number)[]): Promise<void> {
+  try {
+    await axios.put(`${Constant.APIENDPOINT}/lexicon/delete`, { guids: guidArray });
+  } catch (error) {
+    console.error("Error when deleting the lexicon:", error);
+    throw error;
+  }
+}
+
+

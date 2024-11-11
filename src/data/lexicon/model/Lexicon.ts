@@ -1,44 +1,12 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../../config/database';
+// src/models/lexicon.ts
 
-interface LexiconAttributes {
-  id: number;
-  guid: string;
-  reference: string;
-  english: string;
-  french: string;
-  portable: boolean;
-}
-
-interface LexiconCreationAttributes extends Optional<LexiconAttributes, 'id'> {}
-
-class Lexicon extends Model<LexiconAttributes, LexiconCreationAttributes> implements LexiconAttributes {
-  public id!: number;
-  public guid!: string;
-  public reference!: string;
-  public english!: string;
-  public french!: string;
-  public portable!: boolean;
-}
-
-Lexicon.init(
-  {
-    id: {
-      type: DataTypes.INTEGER.UNSIGNED,
-      autoIncrement: true,
-      primaryKey: true
-    },
-    guid: {
-      type: DataTypes.STRING(36),
-      allowNull: false
-    },
-
-public id: number;
-public guid: string;
-public reference: string;
-public english: string;
-public french: string;
-public portable: boolean;
+class Lexicon {
+  public id: number;
+  public guid: string;
+  public reference: string;
+  public english: string;
+  public french: string;
+  public portable: boolean;
 
   constructor(
     reference: string,
@@ -47,7 +15,7 @@ public portable: boolean;
     portable: boolean,
     id?: number,
     guid?: string
-) {
+  ) {
     this.id = id || 0;
     this.guid = guid || '';
     this.reference = reference;
@@ -56,7 +24,7 @@ public portable: boolean;
     this.portable = portable;
   }
 
-public static fromJson(json: any): Lexicon {
+  public static fromJson(json: any): Lexicon {
     return new Lexicon(
       json.reference,
       json.english,
@@ -65,9 +33,10 @@ public static fromJson(json: any): Lexicon {
       json.id,
       json.guid
     );
-  }
+  } ;
 
-public toJson(): any {
+
+  public toJson(): any {
     return {
       guid: this.guid,
       reference: this.reference,
@@ -80,29 +49,3 @@ public toJson(): any {
 
 export { Lexicon };
 
-reference: {
-      type: DataTypes.STRING(120),
-      allowNull: false
-    },
-    english: {
-      type: DataTypes.STRING(120),
-      allowNull: false
-    },
-    french: {
-      type: DataTypes.STRING(120),
-      allowNull: false
-    },
-    portable: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false
-    }
-  },
-  {
-    sequelize,
-    modelName: 'Lexicon',
-    tableName: 'lexicon',
-    timestamps: false
-  }
-);
-
-export { Lexicon };

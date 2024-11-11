@@ -1,15 +1,13 @@
 <template>
   <!-- Alertes -->
+
   <div class="fixed top-4 right-4 z-50">
-    <TransitionGroup
-      enter-active-class="transform ease-out duration-300 transition"
-      enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-      enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
-      leave-active-class="transition ease-in duration-100"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div v-for="alert in alerts" :key="alert.id" class="bg-green-500 text-white px-4 py-2 rounded shadow-lg transition-opacity duration-300 mb-2">
+    <TransitionGroup v-if="alerts && alerts.length > 0" tag="div" name="alert">
+      <div
+        v-for="alert in alerts"
+        :key="alert.id"
+        :class="alert.type === 'success' ? 'bg-green-500 text-white px-9 py-5 rounded shadow-lg mb-2' : 'bg-red-500 text-white px-9 py-5 rounded shadow-lg mb-2'"
+      >
         <strong>{{ alert.title }}:</strong> {{ alert.message }}
         <button @click="removeAlert(alert.id)" class="ml-2 text-xs text-gray-200">X</button>
       </div>
@@ -53,8 +51,8 @@
         <tr>
           <!--          <th></th>-->
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Référence</th>
-          <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Français</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Anglais</th>
+          <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Français</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Actions</th>
         </tr>
         </thead>
@@ -73,8 +71,8 @@
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             {{ lexicon.reference }}
           </td>
-          <td class="py-2 px-4 border-b border-gray-300" @click="editLexicon(lexicon)">{{ lexicon.french }}</td>
           <td class="py-2 px-4 border-b border-gray-300" @click="editLexicon(lexicon)">{{ lexicon.english }}</td>
+          <td class="py-2 px-4 border-b border-gray-300" @click="editLexicon(lexicon)">{{ lexicon.french }}</td>
           <td class="py-2 px-4 border-b border-gray-300">
             <div class="relative">
               <button @click.stop="toggleMenu(lexicon.guid)" class="p-1 hover:bg-gray-100 rounded float-right">
@@ -177,36 +175,42 @@
 </template>
 
 <script setup lang="ts">
-import axios from 'axios';
+// import axios from 'axios';
 import { ref, onMounted, watch, nextTick } from 'vue';
-import "../../constant";
-import { API_ENDPOINT } from '../../constant';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net';
+import {toOpenCamelCase} from "@/data/utils/helper/camelcase";
 
-const lexicons = ref([]);
+import {delLexicon, fetchLexiconsFromApi, saveLexicon} from "@/data/lexicon/service/lexiconService";
+import {Lexicon} from '@/data/lexicon/model/Lexicon'
+import type { Response,Alert } from "@/data/lexicon/service/model/lexiconApiModel";
+import {copyReference} from "@/data/utils/helper/copy";
+import {updateLexicon} from "@/data/lexicon/service/lexiconService";
+
+const lexicons = ref<Lexicon[]>([]);
 const isLoading = ref(true);
 const message = ref('');
-const guid = ref(null);
+const guid = ref<number | null>(null);
 const portable = ref(false);
 const french = ref('');
 const english = ref('');
 const reference = ref('');
 const showDeleteModal = ref(false);
-const guidToDelete = ref([]);
+const guidToDelete = ref<(string | number)[]>([]);
 const selectedLexicons = ref([]);
 const showFormModal = ref(false);
-const activeMenu = ref(null);
-const alerts = ref([]);
+const activeMenu = ref<string | null>(null);
+const alerts = ref<Alert[]>([]);
 
-const showMessage = (msg, status = 'success') => {
+const showMessage = (msg: string, status: 'success' | 'error' = 'success') => {
   if (alerts.value.some(alert => alert.message === msg)) return; // Évite les doublons
 
   const id = Date.now();
   alerts.value.push({
     id,
     title: status === 'success' ? 'Succès' : 'Erreur',
-    message: msg
+    message: msg,
+    type:status
   });
 
   setTimeout(() => {
@@ -214,7 +218,7 @@ const showMessage = (msg, status = 'success') => {
   }, 3000);
 };
 
-const removeAlert = (id) => {
+const removeAlert = (id: string | number) => {
   alerts.value = alerts.value.filter(alert => alert.id !== id);
 };
 
@@ -223,108 +227,157 @@ const closeModal = () => {
   guidToDelete.value = [];
 };
 
-const closeFormModal = () => {
-  console.log("Fermeture du modal...");
-  showFormModal.value = false; // Ferme le modal
-  nextTick(() => {
-    // Réinitialisation des valeurs
-    english.value = '';
-    french.value = '';
-    reference.value = '';
-    portable.value = false;
-    guid.value = null;
-    console.log("Modal fermé et champs réinitialisés.");
-  });
-};
-
-function toOpenCamelCase(str) {
-  if (!str) return '';
-  return str
-    .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('');
-}
-
-// async function fetchLexicons() {
-//   try {
-//     const response = await axios.get(`${API_ENDPOINT}/lexicon/list_all`);
-//     lexicons.value = response.data.response || []; // Vérifie que la réponse est un tableau
-//     if ($.fn.DataTable.isDataTable('#lexicon-table')) {
-//       $('#lexicon-table').DataTable().destroy();
-//     }
-//     await nextTick();
-//     $("#lexicon-table").DataTable();
-//   } catch (error) {
-//     showMessage("Erreur lors de la récupération des lexiques.", 'error');
-//   } finally {
-//     isLoading.value = false;
-//   }
-// }
-
+/**
+ * list lexicon datas
+ */
 async function fetchLexicons() {
   try {
-    const response = await axios.get(`${API_ENDPOINT}/lexicon/list_all`);
-    lexicons.value = response.data.response || []; // Vérifie que la réponse est un tableau
+    const response = await fetchLexiconsFromApi();
+    lexicons.value = response || [];
     if ($.fn.DataTable.isDataTable('#lexicon-table')) {
       $('#lexicon-table').DataTable().destroy();
     }
     await nextTick();
+
     $("#lexicon-table").DataTable({
       "ordering": false, // Assurez-vous que le tri est activé
       "pageLength": 10, // Nombre d'entrées par page par défaut
       "lengthMenu": [10, 25, 50, 100, 200], // Options de sélection du nombre d'entrées par page
     });
   } catch (error) {
-    showMessage("Erreur lors de la récupération des lexiques.", 'error');
+    showMessage("Error when retrieving lexicons.", 'error');
   } finally {
     isLoading.value = false;
   }
 }
 
+/**
+ * save or update lexicon
+ */
+// async function registerOrUpdateLexicon() {
+//   if (!english.value || !french.value) {
+//     showMessage("English and French fields are required.", 'error');
+//     return;
+//   }
+//
+//   const limitedEnglish = english.value.length > 120 ? english.value.slice(0, 120) : english.value;
+//   if (referenceExists(reference.value)) {
+//     showMessage("La référence existe déjà.", 'error');
+//     // Filtrer le tableau pour afficher uniquement les résultats correspondants
+//     $("#lexicon-table").DataTable().search(reference.value).draw(); // Filtre le tableau
+//     return;
+//   }
+//   const postData: Response = {
+//     english: limitedEnglish,
+//     french: french.value,
+//     portable: portable.value,
+//     guid: guid.value
+//   };
+//
+//   try {
+//     const savedLexicon = await saveLexicon(postData);
+//     if (savedLexicon) {
+//       closeFormModal();
+//       location.reload();
+//       showMessage('Operation Successful');
+//       // await fetchLexicons();
+//     } else {
+//       showMessage("Operation Failed.", 'error');
+//     }  } catch (error) {
+//     showMessage("Error during lexicon registration.", 'error');
+//   }
+// }
+
 async function registerOrUpdateLexicon() {
   if (!english.value || !french.value) {
-    showMessage("Les champs Anglais et Français sont requis.", 'error');
+    showMessage("English and French fields are required.", 'error');
     return;
   }
 
   const limitedEnglish = english.value.length > 120 ? english.value.slice(0, 120) : english.value;
+  if (referenceExists(reference.value)) {
+    showMessage("La référence existe déjà.", 'error');
+    // Filtrer le tableau pour afficher uniquement les résultats correspondants
+    $("#lexicon-table").DataTable().search(reference.value).draw();
+    return;
+  }
+  const postData: Response = {
+    english: limitedEnglish,
+    french: french.value,
+    portable: portable.value,
+    guid: guid.value || undefined
+  };
 
   try {
-    const postData = {
-      english: limitedEnglish,
-      french: french.value,
-      portable: portable.value,
-      guid: guid.value
-    };
+    let savedLexicon;
+    if (guid.value) {
+      // Mise à jour
+      savedLexicon = await updateLexicon(postData);
 
-    await axios.post(`${API_ENDPOINT}/lexicon/add`,postData);
-    showMessage('Lexique enregistré avec succès !');
-    // Recharger la page après l'enregistrement
-    location.reload();
+    } else {
+      // Nouveau
+      savedLexicon = await saveLexicon(postData);
+
+    }
+    if (savedLexicon instanceof Lexicon) {
+
+      //lexicons.value.push(savedLexicon);
+      // location.reload();
+      showMessage('Operation Successful');
+      closeFormModal();
+      // await wait (2000);
+      await fetchLexicons();
+    } else {
+      showMessage("Operation Failed.", 'error');
+    }
   } catch (error) {
-    console.error("Erreur lors de l'enregistrement du lexique:", error);
-    showMessage("Erreur lors de l'enregistrement du lexique.", 'error');
+    showMessage("Error during lexicon registration.", 'error');
   }
 }
 
-function confirmDelete(guidArray) {
+// function wait(ms: number): Promise<void> {
+//   return new Promise(resolve => setTimeout(resolve, ms));
+// }
+
+/**
+ * initialise
+ * @param lexicon
+ */
+function editLexicon(lexicon: { id: number; guid: string; reference: string; english: string; french: string; portable: boolean }) {
+  guid.value = Number(lexicon.guid) || null;
+  english.value = lexicon.english || '';
+  french.value = lexicon.french || '';
+  reference.value = lexicon.reference || '';
+  portable.value = lexicon.portable || false;
+  showFormModal.value = true;
+}
+/**
+ * prepare delete eltms en stock guids
+ * @param guidArray
+ */
+function confirmDelete(guidArray: (string | number)[]) {
   guidToDelete.value = guidArray;
   showDeleteModal.value = true;
 }
 
+/**
+ * delete lexicon
+ */
 async function deleteLexicon() {
   try {
-    await axios.put(`${API_ENDPOINT}/lexicon/delete`, { guids: guidToDelete.value });
-    showMessage('Lexique supprimé avec succès !');
+    await delLexicon(guidToDelete.value);
+    showMessage('Lexicon deleted successfully!');
     await fetchLexicons();
     showDeleteModal.value = false;
   } catch (error) {
-    console.error("Erreur lors de la suppression du lexique:", error);
-    showMessage("Erreur lors de la suppression du lexique.", 'error');
+    console.error("Error when deleting the lexicon:", error);
+    showMessage("Error when deleting the lexicon.", 'error');
   }
 }
 
+/**
+ * open modal lexicon
+ */
 function openAddModal() {
   guid.value = null;
   english.value = '';
@@ -334,67 +387,62 @@ function openAddModal() {
   showFormModal.value = true;
 }
 
-function editLexicon(lexicon) {
-  guid.value = lexicon.guid;
-  english.value = lexicon.english;
-  french.value = lexicon.french;
-  reference.value = lexicon.reference; // Si besoin de transformer
-  portable.value = lexicon.portable;
-  showFormModal.value = true;
-}
-
-function copyToClipboard(text) {
-  const tempInput = document.createElement("input");
-  tempInput.value = text;
-  document.body.appendChild(tempInput);
-  tempInput.select();
-  document.execCommand("copy");
-  document.body.removeChild(tempInput);
-
-  showMessage("Référence copiée dans le presse-papiers !"); // Utilisation de showMessage pour les alertes
+/**
+ * copy reference
+ * @param text
+ */
+async function copyToClipboard(text: string) {
+  await copyReference(text);
+  showMessage("Référence copiée dans le presse-papiers !");
   activeMenu.value = null;
 
-  // Auto-hide message after 3 seconds
   setTimeout(() => {
     message.value = '';
   }, 3000);
 }
 
-// function copyToClipboard(text) {
-//   navigator.clipboard.writeText(text).then(() => {
-//     showMessage('Texte copié au presse-papiers !');
-//   }).catch(err => {
-//     console.error('Erreur lors de la copie :', err);
-//     showMessage("Erreur lors de la copie du texte.", 'error');
-//   });
-// }
+function referenceExists(reference: string): boolean {
+  return lexicons.value.some(lexicon => lexicon.reference === reference);
+}
 
-function toggleMenu(lexiconGuid) {
+function toggleMenu(lexiconGuid: string | null) {
   activeMenu.value = activeMenu.value === lexiconGuid ? null : lexiconGuid;
 }
 
-// Écouteur d'événements pour fermer le menu au clic extérieur
+/**
+ * Écouteur d'événements pour fermer le menu au clic extérieur
+ */
 document.addEventListener('click', (event) => {
-  if (!event.target.closest('.relative')) {
+  const target = event.target as HTMLElement;
+  if (target && !target.closest('.relative')) {
     activeMenu.value = null;
   }
 });
 
-// Surveiller les modifications de 'english' pour mettre à jour la référence
-// watch(english, (newValue) => {
-//   reference.value = newValue ? toOpenCamelCase(newValue) : ''; // Utilisation de la fonction ici
-// });
-
-// Surveiller les modifications de 'english' pour mettre à jour la référence
-watch(english, (newValue) => {
+/**
+ * Surveiller les modifications de 'english' pour mettre à jour la référence
+ */
+watch(english, async (newValue) => {
   if (newValue) {
     // Limiter à 120 caractères
     const limitedValue = newValue.length > 120 ? newValue.slice(0, 120) : newValue;
-    reference.value = toOpenCamelCase(limitedValue); // Convertir le texte limité
+    reference.value = await toOpenCamelCase(limitedValue);
   } else {
-    reference.value = ''; // Réinitialiser si le champ est vide
+    reference.value = '';
   }
 });
+
+const closeFormModal = () => {
+  showFormModal.value = false;
+  nextTick(() => {
+    english.value = '';
+    french.value = '';
+    reference.value = '';
+    portable.value = false;
+    guid.value = null;
+  });
+};
+
 
 onMounted(fetchLexicons);
 </script>
@@ -402,5 +450,11 @@ onMounted(fetchLexicons);
 <style scoped>
 .fixed {
   transition: opacity 0.5s ease;
+}
+th {
+  background-color: #3b82f6;
+  color: white;
+  padding: 12px;
+  text-align: left;
 }
 </style>
