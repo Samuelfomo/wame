@@ -1,7 +1,6 @@
 <template>
   <!-- Alertes -->
-
-  <div class="fixed top-4 right-4 z-50">
+  <div class="fixed top-4 right-4 z-50 name">
     <TransitionGroup v-if="alerts && alerts.length > 0" tag="div" name="alert">
       <div
         v-for="alert in alerts"
@@ -58,14 +57,6 @@
         </thead>
         <tbody>
         <tr v-for="lexicon in lexicons" :key="lexicon.guid" class="hover:bg-gray-50">
-          <!--          <td>-->
-          <!--            <input-->
-          <!--              class="py-2 px-4 border-b border-gray-300"-->
-          <!--              type="checkbox"-->
-          <!--              v-model="selectedLexicons"-->
-          <!--              :value="lexicon.guid"-->
-          <!--            />-->
-          <!--          </td>-->
           <td class="py-2 px-4 border-b border-gray-300" @click="editLexicon(lexicon)">
             <span v-if="lexicon.portable" class="inline-block w-2.5 h-2.5 rounded-full bg-blue-600 mr-2 absolute"></span>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -147,7 +138,7 @@
         </div>
 
         <div class="flex justify-end space-x-4">
-          <button @click="closeFormModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+          <button @click="guid ? closeFormModal() : closeFormModalsave()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
             Annuler
           </button>
           <button @click="registerOrUpdateLexicon" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
@@ -175,17 +166,15 @@
 </template>
 
 <script setup lang="ts">
-// import axios from 'axios';
 import { ref, onMounted, watch, nextTick } from 'vue';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net';
 import {toOpenCamelCase} from "@/data/utils/helper/camelcase";
 
-import {delLexicon, fetchLexiconsFromApi, saveLexicon} from "@/data/lexicon/service/lexiconService";
+import {delLexicon, fetchLexiconsFromApi, saveLexicon, updateLexicon} from "@/data/lexicon/service/lexiconService";
 import {Lexicon} from '@/data/lexicon/model/Lexicon'
 import type { Response,Alert } from "@/data/lexicon/service/model/lexiconApiModel";
 import {copyReference} from "@/data/utils/helper/copy";
-import {updateLexicon} from "@/data/lexicon/service/lexiconService";
 
 const lexicons = ref<Lexicon[]>([]);
 const isLoading = ref(true);
@@ -264,7 +253,7 @@ async function fetchLexicons() {
 //   if (referenceExists(reference.value)) {
 //     showMessage("La référence existe déjà.", 'error');
 //     // Filtrer le tableau pour afficher uniquement les résultats correspondants
-//     $("#lexicon-table").DataTable().search(reference.value).draw(); // Filtre le tableau
+//     $("#s-table").DataTable().search(reference.value).draw(); // Filtre le tableau
 //     return;
 //   }
 //   const postData: Response = {
@@ -295,12 +284,7 @@ async function registerOrUpdateLexicon() {
   }
 
   const limitedEnglish = english.value.length > 120 ? english.value.slice(0, 120) : english.value;
-  if (referenceExists(reference.value)) {
-    showMessage("La référence existe déjà.", 'error');
-    // Filtrer le tableau pour afficher uniquement les résultats correspondants
-    $("#lexicon-table").DataTable().search(reference.value).draw();
-    return;
-  }
+
   const postData: Response = {
     english: limitedEnglish,
     french: french.value,
@@ -313,20 +297,26 @@ async function registerOrUpdateLexicon() {
     if (guid.value) {
       // Mise à jour
       savedLexicon = await updateLexicon(postData);
+      closeFormModal();
+      await fetchLexicons();
 
     } else {
+      if (referenceExists(reference.value)) {
+        showMessage("The reference already exists.", 'error');
+        $("#lexicon-table").DataTable().search(reference.value).draw();
+        closeFormModal();
+        return;
+      }
       // Nouveau
       savedLexicon = await saveLexicon(postData);
-
+      guid.value = null;
+      english.value = '';
+      french.value = '';
+      reference.value = '';
+      portable.value = false;
     }
     if (savedLexicon instanceof Lexicon) {
-
-      //lexicons.value.push(savedLexicon);
-      // location.reload();
       showMessage('Operation Successful');
-      closeFormModal();
-      // await wait (2000);
-      await fetchLexicons();
     } else {
       showMessage("Operation Failed.", 'error');
     }
@@ -335,9 +325,6 @@ async function registerOrUpdateLexicon() {
   }
 }
 
-// function wait(ms: number): Promise<void> {
-//   return new Promise(resolve => setTimeout(resolve, ms));
-// }
 
 /**
  * initialise
@@ -442,12 +429,19 @@ const closeFormModal = () => {
     guid.value = null;
   });
 };
+const closeFormModalsave = () => {
+  showFormModal.value = false;
+  location.reload();
+};
 
 
 onMounted(fetchLexicons);
 </script>
 
 <style scoped>
+.name{
+  z-index: 9999;
+}
 .fixed {
   transition: opacity 0.5s ease;
 }
@@ -457,4 +451,5 @@ th {
   padding: 12px;
   text-align: left;
 }
+
 </style>

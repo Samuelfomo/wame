@@ -1,4 +1,18 @@
 <template>
+
+  <div class="fixed top-4 right-4 z-50 name">
+    <TransitionGroup v-if="alerts && alerts.length > 0" tag="div" name="alert">
+      <div
+        v-for="alert in alerts"
+        :key="alert.id"
+        :class="alert.type === 'success' ? 'bg-green-500 text-white px-9 py-5 rounded shadow-lg mb-2' : 'bg-red-500 text-white px-9 py-5 rounded shadow-lg mb-2'"
+      >
+        <strong>{{ alert.title }}:</strong> {{ alert.message }}
+        <button @click="removeAlert(alert.id)" class="ml-2 text-xs text-gray-200">X</button>
+      </div>
+    </TransitionGroup>
+  </div>
+
   <div class="p-8 bg-gray-100 min-h-screen">
     <h3 class="text-3xl font-semibold text-gray-800 mb-6">Gestion des Contacts</h3>
 
@@ -35,43 +49,41 @@
       <table id="contact-table" class="min-w-full bg-white rounded table-class">
         <thead>
         <tr>
-          <th>
-            <input
-              class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600"
-              type="checkbox"
-              v-model="selectAll"
-              @change="toggleSelectAll"
-            />
-          </th>
-          <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Prénom</th>
+          <!--          <th>-->
+          <!--            <input-->
+          <!--              class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600"-->
+          <!--              type="checkbox"-->
+          <!--              v-model="selectAll"-->
+          <!--              @change="toggleSelectAll"-->
+          <!--            />-->
+          <!--          </th>-->
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Nom</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Mobile</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Email</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Whatsapp</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Ville</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Langue</th>
-          <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Genre</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Actions</th>
         </tr>
         </thead>
         <tbody>
         <tr v-for="contact in contacts" :key="contact.guid" class="hover:bg-gray-50">
-          <td>
-            <input
-              class="py-2 px-4 border-b border-gray-300"
-              type="checkbox"
-              v-model="selectedContacts"
-              :value="contact.guid"
-            />
+          <!--          <td>-->
+          <!--            <input-->
+          <!--              class="py-2 px-4 border-b border-gray-300"-->
+          <!--              type="checkbox"-->
+          <!--              v-model="selectedContacts"-->
+          <!--              :value="contact.guid"-->
+          <!--            />-->
+          <!--          </td>-->
+          <td class="py-2 px-4 border-b border-gray-300" @click="editContact(contact)">
+            {{ contact.gender === 'm' ? 'Mn.' : 'Mne.' }}&nbsp;{{ contact.lastname }}
           </td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ contact.firstname }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ contact.lastname }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ contact.mobile }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ contact.email }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ contact.whatsapp }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ contact.location }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ contact.language }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ contact.gender }}</td>
+          <td class="py-2 px-4 border-b border-gray-300" @click="editContact(contact)">{{ contact.mobile }}</td>
+          <td class="py-2 px-4 border-b border-gray-300" @click="editContact(contact)">{{ contact.email }}</td>
+          <td class="py-2 px-4 border-b border-gray-300" @click="editContact(contact)">{{ contact.whatsapp }}</td>
+          <td class="py-2 px-4 border-b border-gray-300" @click="editContact(contact)">{{ contact.location }}</td>
+          <td class="py-2 px-4 border-b border-gray-300" @click="editContact(contact)">{{ contact.language }}</td>
           <td class="py-2 px-4 border-b border-gray-300">
             <div class="relative">
               <button @click="toggleMenu(contact.guid)" class="p-1 hover:bg-gray-100 rounded">
@@ -198,14 +210,13 @@
         </div>
 
         <div class="flex justify-end space-x-4">
-          <button @click="closeFormModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+          <button @click="guid ? closeFormModal() : closeFormModalsave()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
             Annuler
           </button>
           <button @click="registerOrUpdateContact" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
             {{ guid ? 'Mettre à Jour' : 'Enregistrer' }}
           </button>
         </div>
-        <p v-if="errorMessage" class="text-red-600 mt-4">{{ errorMessage }}</p>
       </div>
     </div>
 
@@ -237,83 +248,128 @@ import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net';
 import {Constant} from "@/app/constant/constant";
 
-const contacts = ref([]);
+import {Contact} from "@/data/contact/model/Contact";
+import {fetchContactsFromApi, saveContact} from "@/data/contact/service/contactService";
+import type {Alert, Response} from "@/data/contact/service/model/contactApiModel";
+
+
+
+
+const contacts = ref<Contact[]>([]);
 const isLoading = ref(true);
-const errorMessage = ref('');
 const message = ref('');
-const guid = ref(null);
+const guid = ref<number | null>(null);
 const firstname = ref('');
 const lastname = ref('');
-const mobile = ref('');
+const mobile = ref<number | null>(null);
 const email = ref('');
-const whatsapp = ref('');
+const whatsapp = ref<number | null | undefined>(null);
 const location = ref('');
 const gender = ref('');
 const language = ref('');
 const qualified = ref(false);
 const showDeleteModal = ref(false);
-const guidToDelete = ref([]);
-const selectAll = ref(false);
+const guidToDelete = ref<(string | number)[]>([]);
 const selectedContacts = ref([]);
 const showFormModal = ref(false);
-const activeMenu = ref(null);
+const activeMenu = ref< string | null >(null);
+const alerts = ref<Alert[]>([]);
 
-function toggleMenu(contactGuid) {
+
+
+function toggleMenu(contactGuid: string | null) {
   activeMenu.value = activeMenu.value === contactGuid ? null : contactGuid;
 }
 
 // Ferme le menu en cliquant à l'extérieur
 document.addEventListener('click', (event) => {
-  if (!event.target.closest('.relative')) {
+  const target = event.target as HTMLElement;
+  if (target && !target.closest('.relative')) {
     activeMenu.value = null;
   }
 });
 
 async function fetchContacts() {
   try {
-    const response = await axios.get(`${Constant.APIENDPOINT}/contact/list_all`);
-    contacts.value = response.data.response || []; // Assurez-vous que la réponse est un tableau
+    const response = await fetchContactsFromApi();
+    contacts.value =response || [];
     if ($.fn.DataTable.isDataTable('#contact-table')) {
       $('#contact-table').DataTable().destroy();
     }
     await nextTick();
-    $("#contact-table").DataTable();
+
+    $("#contact-table").DataTable({
+      "ordering": false, // Assurez-vous que le tri est activé
+      "pageLength": 10, // Nombre d'entrées par page par défaut
+      "lengthMenu": [10, 25, 50, 100, 200], // Options de sélection du nombre d'entrées par page
+    });
   } catch (error) {
-    message.value = "Erreur lors de la récupération des contacts.";
+    showMessage('Error when retrieving contacts.');
   } finally {
     isLoading.value = false;
   }
 }
 
 async function registerOrUpdateContact() {
-  // Validation des champs requis
   if (!lastname.value || !mobile.value || typeof guid.value === 'undefined') {
-    errorMessage.value = "Les champs 'Nom', 'Mobile' et 'GUID' sont obligatoires.";
+    showMessage("The 'Name', 'Mobile' and 'GUID' fields are mandatory.") ;
     return;
   }
 
+  const postData: Response = {
+    firstname: firstname.value,
+    lastname: lastname.value,
+    mobile: mobile.value,
+    whatsapp: whatsapp.value !== null ? whatsapp.value : undefined,
+    email: email.value,
+    location: location.value,
+    gender: gender.value,
+    qualified: qualified.value,
+    language: language.value,
+    guid: guid.value || undefined
+  };
   try {
-    const postData = {
-      firstname: firstname.value,
-      lastname: lastname.value,
-      mobile: mobile.value,
-      email: email.value,
-      whatsapp: whatsapp.value,
-      location: location.value,
-      gender: gender.value,
-      qualified: qualified.value,
-      language: language.value,
-      guid: guid.value
-    };
+    let savedContact;
+    if (guid.value) {
+      savedContact = await saveContact(postData);
+      await fetchContacts();
+      closeFormModal();
+    }
+    else {
+      if (contactExists(mobile.value,whatsapp.value,email.value)) {
+        showMessage("The contact already exists..", 'error');
+        $("#contact-table").DataTable().search(mobile.value).draw();
+        closeFormModal();
+        return;
+      }
+     savedContact = await saveContact(postData);
+      firstname.value = '';
+      lastname.value = '';
+      mobile.value = null;
+      email.value = '';
+      whatsapp.value = null;
+      location.value = '';
+      gender.value = '';
+      language.value = '';
+      guid.value = null;
 
-    await axios.post(`${Constant.APIENDPOINT}/contact/add`, postData);
-    message.value = guid.value ? 'Contact mis à jour avec succès !' : 'Contact enregistré avec succès !';
-    await fetchContacts();
-
-    closeFormModal();
+    }
+    if (savedContact instanceof Contact) {
+      showMessage('Operation Successful');
+    } else {
+      showMessage("Operation Failed.", 'error');
+    }
   } catch (error) {
-    message.value = "Erreur lors de l'enregistrement du contact.";
+    showMessage(`Erreur lors de l'enregistrement du contact: ${error.message}`);
   }
+}
+
+function contactExists(mobile, whatsapp, email) {
+  return contacts.value.some(contact =>
+    contact.mobile === mobile ||
+    contact.whatsapp === whatsapp ||
+    contact.email === email
+  );
 }
 
 function openAddModal() {
@@ -321,28 +377,40 @@ function openAddModal() {
   guid.value = null;
   firstname.value = '';
   lastname.value = '';
-  mobile.value = '';
+  mobile.value = null;
   email.value = '';
-  whatsapp.value = '';
+  whatsapp.value = null;
   location.value = '';
   gender.value = '';
   qualified.value = false;
   language.value = '';
-  errorMessage.value = ''; // Réinitialiser le message d'erreur
   showFormModal.value = true;
 }
 
-function editContact(contact) {
-  guid.value = contact.guid;
-  firstname.value = contact.firstname;
-  lastname.value = contact.lastname;
-  mobile.value = contact.mobile;
-  email.value = contact.email;
-  whatsapp.value = contact.whatsapp;
-  location.value = contact.location;
-  gender.value = contact.gender;
-  qualified.value = contact.qualified;
-  language.value = contact.language;
+function editContact(contact: {
+  id: number,
+  guid: string,
+  firstname: string,
+  lastname: string,
+  mobile: number,
+  whatsapp: number,
+  email: string,
+  gender: string,
+  language: string,
+  location: string,
+  qualified: boolean
+}) {
+
+  guid.value = Number(contact.guid) || null ;
+  firstname.value = contact.firstname || '';
+  lastname.value = contact.lastname || '';
+  mobile.value = Number(contact.mobile) || null;
+  whatsapp.value = Number(contact.whatsapp) || null;
+  email.value = contact.email || '';
+  gender.value = contact.gender || '';
+  language.value = contact.language || '';
+  location.value = contact.location || '';
+  qualified.value = contact.qualified || false;
   showFormModal.value = true;
 }
 
@@ -351,29 +419,34 @@ function closeFormModal() {
   // Réinitialiser les champs
   firstname.value = '';
   lastname.value = '';
-  mobile.value = '';
+  mobile.value = null;
   email.value = '';
-  whatsapp.value = '';
+  whatsapp.value = null;
   location.value = '';
   gender.value = '';
   language.value = '';
   guid.value = null;
 }
 
-async function confirmDelete(guidArray) {
+function closeFormModalsave(){
+  showFormModal.value = false;
+location.reload();
+}
+
+async function confirmDelete(guidArray: (string | number)[]) {
   guidToDelete.value = guidArray;
   showDeleteModal.value = true;
 }
 
 async function deleteContact() {
   try {
-    await axios.put(`${Constant.APIENDPOINT}/contact/delete`, { guids: guidToDelete.value });    message.value = 'Contact supprimé avec succès !';
+    await axios.put(`${Constant.APIENDPOINT}/contact/delete`, { guids: guidToDelete.value });
+    showMessage('Contact supprimé avec succès !');
     await fetchContacts();
     showDeleteModal.value = false;
   } catch (error) {
     console.error("Erreur lors de la suppression du contact:", error);
-    console.error("Détails de la réponse:", error.response.data);
-    message.value = "Erreur lors de la suppression du contact.";
+    showMessage('Erreur lors de la suppression du contact.');
   }
 }
 
@@ -382,6 +455,25 @@ function closeModal() {
   showDeleteModal.value = false;
   guidToDelete.value = [];
 }
+const showMessage = (msg: string, status: 'success' | 'error' = 'success') => {
+  if (alerts.value.some(alert => alert.message === msg)) return; // Évite les doublons
+
+  const id = Date.now();
+  alerts.value.push({
+    id,
+    title: status === 'success' ? 'Succès' : 'Erreur',
+    message: msg,
+    type:status
+  });
+
+  setTimeout(() => {
+    removeAlert(id);
+  }, 3000);
+};
+const removeAlert = (id: string | number) => {
+  alerts.value = alerts.value.filter(alert => alert.id !== id);
+};
+
 
 onMounted(fetchContacts);
 </script>
