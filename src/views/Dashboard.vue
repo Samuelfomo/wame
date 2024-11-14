@@ -24,7 +24,6 @@
         <div
           class="inline-block min-w-full overflow-hidden align-middle border-b border-gray-200 shadow sm:rounded-lg"
         >
-
         </div>
       </div>
     </div>
