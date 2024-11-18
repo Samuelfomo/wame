@@ -64,3 +64,59 @@ export async function deleteContact(guidArray: (string | number)[]): Promise<voi
     throw error;
   }
 }
+
+/**
+ * get contact by guid
+ * @param guid
+ */
+export async function fetchContactByGuid(guid: number): Promise<Contact | null> {
+  try {
+    const response = await axios.put(`${Constant.APIENDPOINT}/contact/list`, {
+      guid: guid
+    });
+
+    // Vérification de la réponse { status: boolean, response: Contact[] }
+    if (response.data.status && response.data.response.length > 0) {
+      // Retourne le premier élément du tableau response
+      return response.data.response[0];
+    }
+    return null;
+  } catch (error) {
+    console.error("Erreur lors de la récupération du contact:", error);
+    return null;
+  }
+}
+
+/**
+ * get element exist
+ * @param mobile
+ * @param email
+ */
+export async function fetchContactExist(mobile: number, email: string): Promise<boolean> {
+  try {
+    const response = await axios.put(`${Constant.APIENDPOINT}/contact/list`, {
+      mobile: mobile,
+      email: email
+    });
+
+    console.log("Contact Exist Check - Response:", response.data);
+    console.log("Status:", response.data.status);
+    console.log("Response Length:", response.data.response.length);
+
+    // On retourne true si on trouve des contacts correspondants
+    return response.data.status && response.data.response.length > 0;
+  } catch (error) {
+    console.log("Erreur lors de la vérification du contact:", error);
+    return false;
+  }
+}
+
+// export async function fetchContactByGuid(guid: number): Promise<Contact | null> {
+//   try {
+//     const response = await axios.get(`${Constant.APIENDPOINT}/contact/list/${guid}`);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Erreur lors de la récupération du contact:", error);
+//     return null;
+//   }
+// }

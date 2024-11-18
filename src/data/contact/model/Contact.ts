@@ -12,6 +12,8 @@ class Contact {
   public language: string;
   public location: string;
   public qualified: boolean;
+  public qualifiedBy: number;
+  public qualifiedDate: Date;
 
   constructor(
     firstname: string,
@@ -23,6 +25,8 @@ class Contact {
     language: string,
     location: string,
     qualified: boolean,
+    qualifiedDate: Date,
+    qualifiedBy?:number,
     id?: number,
     guid?: string
   ) {
@@ -37,6 +41,8 @@ class Contact {
     this.language = language;
     this.location = location;
     this.qualified = qualified;
+    this.qualifiedBy = qualifiedBy;
+    this.qualifiedDate = qualifiedDate;
   }
 
   // Méthode statique pour convertir un objet JSON en une instance de Contact
@@ -51,6 +57,8 @@ class Contact {
       json.language,
       json.location,
       json.qualified,
+      json.qualifiedBy,
+      new Date(json.qualifiedDate),
       json.id,
       json.guid
     );
@@ -59,6 +67,7 @@ class Contact {
   // Méthode pour convertir l'objet Contact en un objet JSON
   public toJson(): any {
     return {
+      id: this.id,
       guid: this.guid,
       firstname: this.firstname,
       lastname: this.lastname,
@@ -68,7 +77,9 @@ class Contact {
       gender: this.gender,
       language: this.language,
       location: this.location,
-      qualified: this.qualified
+      qualified: this.qualified,
+      qualifiedDate: this.qualifiedDate.toISOString(),
+      qualifiedBy: this.qualifiedBy
     };
   }
 }

@@ -12,38 +12,48 @@
       </div>
     </TransitionGroup>
   </div>
+  <div class="p-10 bg-gray-100 border-blue-600 border-2 rounded-lg min-h-screen" hidden="hidden"></div>
 
-  <div class="p-10 bg-gray-100 border-blue-600 border-2 rounded-lg min-h-screen">
+  <div>
     <div class="flex items-center justify-center py-10">
       <div class="bg-white shadow-lg rounded-lg p-8 w-full max-w-6xl">
-        <h2 class="text-3xl font-bold text-gray-800 mb-6">Ajouter un Contact</h2>
 
-        <form @submit.prevent="registerOrUpdateContact" class="grid grid-cols-2 gap-6">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">{{guid ? 'Modifier le Contact': 'Ajouter un Contact'}}</h2>
 
-        <!-- Nom de famille -->
-        <div class="flex items-center">
-          <i class="fas fa-user text-gray-400"></i>&nbsp;&nbsp;
-          <label for="lastname" class="w-24 text-gray-600">Nom</label>
-          <select v-model="gender" id="gender" class="border border-gray-300 p-2 focus:outline-none focus:border-indigo-500">
-            <option disabled value="" >Genre</option>
-            <option value="m" >Mn</option>
-            <option value="f">Mne</option>
-          </select>&nbsp;&nbsp;
-          <input v-model="lastname" type="text" id="lastname" placeholder="Doe" class="flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-indigo-500">
-        </div>
+        <form @submit.prevent="registerOrUpdateContact">
+          <div class="grid grid-cols-1 gap-6 mt-4 sm:grid-cols-2">
 
-        <!-- Prénom -->
+          <div class="flex items-center">
+            <i class="fas fa-user text-gray-400"></i>&nbsp;&nbsp;
+            <label for="lastname" class="w-24 text-gray-600">Nom</label>
+            <div class="flex flex-col">
+              <label class="flex items-center">
+                <input v-model="gender" type="radio" value="m" class="mr-2" />
+                Mn
+              </label>
+              <label class="flex items-center">
+                <input v-model="gender" type="radio" value="f" class="mr-2" />
+                Mne
+              </label>
+            </div>
+            &nbsp;&nbsp;
+            <input v-model="lastname" type="text" id="lastname" placeholder="Doe"
+              class="flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-indigo-500"/>
+          </div>
+
+
+          <!-- Mobile -->
+          <div class="flex items-center">
+            <i class="fas fa-phone text-gray-400"></i>&nbsp;&nbsp;
+            <label for="mobile" class="w-24 text-gray-600">Mobile</label>
+            <input v-model="mobile" type="tel" id="mobile" placeholder="06 12 34 56 78" class="flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Prénom -->
         <div class="flex items-center">
           <i class="fas fa-user text-gray-400"></i>&nbsp;&nbsp;
           <label for="firstname" class="w-24 text-gray-600">Prénom</label>
           <input v-model="firstname" type="text" id="firstname" placeholder="John" class=" flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <!-- Mobile -->
-        <div class="flex items-center">
-          <i class="fas fa-phone text-gray-400"></i>&nbsp;&nbsp;
-          <label for="mobile" class="w-24 text-gray-600">Mobile</label>
-          <input v-model="mobile" type="tel" id="mobile" placeholder="06 12 34 56 78" class="flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-indigo-500">
         </div>
 
         <!-- WhatsApp -->
@@ -84,6 +94,7 @@
           <label for="qualified" class="w-24 text-gray-600">Qualifié</label>
           <input v-model="qualified" type="checkbox" id="qualified" class="h-5 w-5 text-indigo-600 border-gray-300 rounded">
         </div>
+    </div>
 
 
         <!-- Bouton d'envoi -->
@@ -100,13 +111,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { saveContact } from "@/data/contact/service/contactService";
-import type { Alert, Response } from "@/data/contact/service/model/contactApiModel";
+import { ref, onMounted } from 'vue';
+import type { Alert } from "@/data/contact/service/model/contactApiModel";
+import { useRouter, useRoute } from 'vue-router';
+import { saveContact, fetchContactByGuid, fetchContactExist } from "@/data/contact/service/contactService";
 
-import { useRouter } from 'vue-router';
 
-
+const router = useRouter();
+const route = useRoute();
 
 const guid = ref<number | null>(null);
 const firstname = ref('');
@@ -121,7 +133,6 @@ const language = ref('');
 const qualified = ref(false);
 const alerts = ref<Alert[]>([]);
 
-const router = useRouter();
 
 async function registerOrUpdateContact() {
   if (!lastname.value || !mobile.value) {
@@ -129,42 +140,52 @@ async function registerOrUpdateContact() {
     return;
   }
 
-  const postData: Response = {
+  if (!guid.value) {
+    // Vérifie si le contact existe
+    const exists = await fetchContactExist(mobile.value, email.value);
+
+    console.log("Contact Exists:", exists);
+
+    if (exists) {
+      showMessage("Un contact avec ce numéro de mobile ou email existe déjà.", 'error');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return;
+    }
+    else {
+      showMessage("Un nouveau contact cree.");
+    }
+  }
+
+  const postData = {
     firstname: firstname.value,
     lastname: lastname.value,
     mobile: mobile.value,
-    whatsapp: whatsapp.value !== null ? whatsapp.value : undefined,
+    whatsapp: Number(whatsapp.value),
     email: email.value,
     location: location.value,
     gender: gender.value,
     qualified: qualified.value,
     language: language.value,
-    guid: guid.value || undefined
+    guid: guid.value
   };
 
   try {
     const savedContact = await saveContact(postData);
     if (savedContact) {
-      showMessage('Enregistrement réussi');
-
-      firstname.value = '';
-      lastname.value = '';
-      mobile.value = null;
-      email.value = '';
-      whatsapp.value = null;
-      location.value = '';
-      gender.value = '';
-      language.value = '';
-      guid.value = null;
-      qualified.value=false;
-
-      // await router.push('/contact');
+      showMessage(guid.value ? 'Modification réussie' : 'Enregistrement réussi');
+      if(guid.value){
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await router.push('/contact');
+      }
+      else{
+       await clearForm();
+      }
 
     } else {
-      showMessage("Enregistrement échoué", 'error');
+      showMessage(guid.value ? "Modification échouée" : "Enregistrement échoué", 'error');
     }
   } catch (error) {
-    showMessage("Erreur lors de l'enregistrement du contact", 'error');
+    showMessage("Erreur lors de l'opération", 'error');
   }
 }
 
@@ -207,10 +228,63 @@ if (props.contact) {
   qualified.value = props.contact.qualified;
 }
 
+const loadContactData = async (guidParam: number) => {
+  try {
+    const contact = await fetchContactByGuid(guidParam);
+    if (contact) {
+      guid.value = Number(contact.guid);
+      firstname.value = contact.firstname;
+      lastname.value = contact.lastname;
+      mobile.value = contact.mobile;
+      whatsapp.value = contact.whatsapp;
+      email.value = contact.email;
+      location.value = contact.location;
+      gender.value = contact.gender;
+      language.value = contact.language;
+      qualified.value = contact.qualified;
+    }
+  } catch (error) {
+    showMessage("Erreur lors du chargement du contact", 'error');
+  }
+};
+
+onMounted(async () => {
+  const guidFromQuery = route.query.guid as number;
+  if (guidFromQuery) {
+    await loadContactData(guidFromQuery);
+  }
+
+  // Alternative: utiliser l'état de la route si le contact complet a été passé
+  const contactFromState = router.currentRoute.value.state?.contact;
+  if (contactFromState) {
+    guid.value = contactFromState.guid;
+    firstname.value = contactFromState.firstname;
+    lastname.value = contactFromState.lastname;
+    mobile.value = contactFromState.mobile;
+    whatsapp.value = contactFromState.whatsapp;
+    email.value = contactFromState.email;
+    location.value = contactFromState.location;
+    gender.value = contactFromState.gender;
+    language.value = contactFromState.language;
+    qualified.value = contactFromState.qualified;
+  }
+});
+
+async function clearForm(){
+  firstname.value = '';
+  lastname.value = '';
+  mobile.value = null;
+  email.value = '';
+  whatsapp.value = null;
+  location.value = '';
+  gender.value = '';
+  language.value = '';
+  guid.value = null;
+  qualified.value=false;
+}
+
 </script>
 
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
-/* Design propre et sobre, sans fond coloré */
 </style>
-

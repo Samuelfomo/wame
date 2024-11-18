@@ -26,24 +26,41 @@ export interface Alert {
   type: 'success' | 'error';
 }
 
+/**
+ * Interface pour la réponse de l'API
+ */
+// interface Response {
+//   status: boolean;
+//   response: Contact[];
+// }
+
 // Converts JSON strings to/from your types
 export class Convert {
-  // Convertit une chaîne JSON en un objet ContactAPIResponse
+
+  /**
+   *   Convertit une chaîne JSON en un objet ContactAPIResponse
+    */
   public static toContactAPIResponse(json: string): ContactAPIResponse {
     return JSON.parse(json);
   }
 
-  // Convertit un objet ContactAPIResponse en chaîne JSON
+  /**
+   * Convertit un objet ContactAPIResponse en chaîne JSON
+    */
   public static contactAPIResponseToJson(value: ContactAPIResponse): string {
     return JSON.stringify(value);
   }
 
-  // Convertit une réponse API en un tableau de contacts
+  /**
+   *   Convertit une réponse API en un tableau de contacts
+    */
   public static toContactArray(apiResponse: ContactAPIResponse): Contact[] {
     return apiResponse.response?.map(item => Contact.fromJson(item)) || [];
   }
 
-  // Convertit une réponse API en un seul contact
+  /**
+   *   Convertit une réponse API en un seul contact
+   */
   public static toContact(apiResponse: ContactAPIResponse): Contact {
     return Contact.fromJson(apiResponse.response);
   }

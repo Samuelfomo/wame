@@ -31,7 +31,7 @@ const toggleCollapse = () => {
     >
       <nobr>
       <div class="flex items-center justify-between mt-8 px-4">
-        <div class="flex items-center" @click="toggleCollapse">
+        <div class="flex items-center" >
           <svg
             class="w-12 h-12"
             viewBox="0 0 512 512"
@@ -51,7 +51,7 @@ const toggleCollapse = () => {
               fill="white"
             />
           </svg>
-          <span class="mx-4 text-2xl font-semibold text-white" v-show="!isCollapsed">WAME-APP</span>
+          <span class="mx-4 text-2xl font-semibold text-white">WAME-APP</span>
         </div>
 <!--         Bouton pour réduire/étendre -->
         <button

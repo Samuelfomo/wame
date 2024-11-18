@@ -62,6 +62,7 @@
         <tr v-for="contact in contacts" :key="contact.guid" class="hover:bg-gray-50">
           <td class="py-2 px-4 border-b border-gray-300">
             {{ contact.gender === 'm' ? 'Mn.' : 'Mne.' }}&nbsp;{{ contact.lastname }}
+            <span v-if="contact.qualified" class="text-blue-600 mr-2 float-end" ><i class="fas fa-check"></i></span>
           </td>
           <td class="py-2 px-4 border-b border-gray-300" >{{ contact.mobile }}</td>
           <td class="py-2 px-4 border-b border-gray-300" >{{ contact.email }}</td>
@@ -77,7 +78,7 @@
               </button>
               <div v-if="activeMenu === contact.guid" class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                 <div class="py-1">
-                  <button  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" @click="editContact(contact.guid)">
+                  <button  @click="editContact(contact)"  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
                     Modifier
                   </button>
                   <button @click="confirmDelete([contact.guid])" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left">
@@ -106,11 +107,12 @@
         </div>
       </div>
     </div>
-
-    <!-- Message Toast -->
     <div v-if="message" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded shadow-lg">
       {{ message }}
     </div>
+
+    <router-view :on-update="updateMessage"></router-view>
+
   </div>
 </template>
 
@@ -125,12 +127,13 @@ import {Contact} from "@/data/contact/model/Contact";
 import {fetchContactsFromApi} from "@/data/contact/service/contactService";
 import type {Alert} from "@/data/contact/service/model/contactApiModel";
 import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+
+
+
 const contacts = ref<Contact[]>([]);
-
-
-
-
-
 const isLoading = ref(true);
 const message = ref('');
 const showDeleteModal = ref(false);
@@ -138,10 +141,14 @@ const guidToDelete = ref<(string | number)[]>([]);
 const selectedContacts = ref([]);
 const activeMenu = ref< string | null >(null);
 const alerts = ref<Alert[]>([]);
-const router = useRouter();
 
 
-
+function updateMessage(newMessage: string) {
+  message.value = newMessage;
+  setTimeout(() => {
+    message.value = ''; // Réinitialiser le message après 3 secondes
+  }, 3000);
+}
 function toggleMenu(contactGuid: string | null) {
   activeMenu.value = activeMenu.value === contactGuid ? null : contactGuid;
 }
@@ -168,7 +175,7 @@ async function fetchContacts() {
       "lengthMenu": [10, 25, 50, 100, 200], // Options de sélection du nombre d'entrées par page
     });
   } catch (error) {
-    showMessage('Error when retrieving contacts.');
+    showMessage('Error when retrieving contacts.', 'error');
   } finally {
     isLoading.value = false;
   }
@@ -213,10 +220,34 @@ const removeAlert = (id: string | number) => {
   alerts.value = alerts.value.filter(alert => alert.id !== id);
 };
 
-function editContact(guid) {
-  router.push({ name: 'FormContact', params: { guid } });
-}
+const editContact = (contact: Contact) => {
+  router.push({
+    name: 'FormContact',
+    query: { guid: contact.guid.toString() },
+    state: {
+      firstname: contact.firstname,
+      lastname: contact.lastname,
+      mobile: contact.mobile,
+      whatsapp: contact.whatsapp,
+      email: contact.email,
+      location: contact.location,
+      language: contact.language,
+      gender: contact.gender,
+      qualified: contact.qualified
 
+    }
+  });
+  activeMenu.value = null; // Ferme le menu
+};
+
+// const editContact = (contact: Contact) => {
+//   router.push({
+//     name: 'FormContact',
+//     query: { guid: contact.guid.toString() },
+//     state: { contact: contact }
+//   });
+//   activeMenu.value = null; // Ferme le menu
+// };
 
 onMounted(fetchContacts);
 </script>

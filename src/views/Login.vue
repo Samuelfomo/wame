@@ -13,9 +13,9 @@ function login() {
 
 <template>
   <div class="flex items-center justify-center h-screen px-6 bg-login">
-  <div class="flex items-center justify-center max-h-screen bg-gray-400">
-    <div class="w-full max-w-sm p-6 bg-white rounded-md shadow-md">
-      <div class="flex items-center justify-center">
+    <div class="flex items-center justify-center max-h-screen bg-gray-400">
+      <div class="w-full max-w-sm p-6 bg-white rounded-md shadow-md">
+        <div class="flex items-center justify-center p-6">
         <svg
           class="w-10 h-10"
           viewBox="0 0 512 512"
@@ -38,13 +38,13 @@ function login() {
         <span class="text-2xl font-semibold text-gray-700">WAME-APP</span>
       </div>
 
-      <form class="mt-4" @submit.prevent="login">
+        <form class="mt-4" @submit.prevent="login">
         <label class="block">
-          <span class="text-sm text-gray-700">Email</span>
+          <span class="text-lg text-black">Email</span>
           <input
             v-model="email"
             type="email"
-            class="block w-full mt-1 border-gray-600 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500"
+            class="block w-full mt-2 border-gray-600 rounded-md focus:border-indigo-600 focus:ring focus:ring-opacity-40 focus:ring-indigo-500"
           >
         </label>
 
