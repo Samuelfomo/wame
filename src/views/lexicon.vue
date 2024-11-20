@@ -169,6 +169,7 @@
 import { ref, onMounted, watch, nextTick } from 'vue';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net';
+import 'datatables.net-responsive';
 import {toOpenCamelCase} from "@/data/utils/helper/camelcase";
 
 import {delLexicon, fetchLexiconsFromApi, saveLexicon, updateLexicon} from "@/data/lexicon/service/lexiconService";
@@ -232,7 +233,8 @@ async function fetchLexicons() {
       "ordering": false, // Assurez-vous que le tri est activé
       "pageLength": 10, // Nombre d'entrées par page par défaut
       "lengthMenu": [10, 25, 50, 100, 200], // Options de sélection du nombre d'entrées par page
-    });
+      responsive:true,
+    }as any);
   } catch (error) {
     showMessage("Error when retrieving lexicons.", 'error');
   } finally {

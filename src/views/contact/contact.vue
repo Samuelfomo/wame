@@ -61,8 +61,9 @@
         <tbody>
         <tr v-for="contact in contacts" :key="contact.guid" class="hover:bg-gray-50">
           <td class="py-2 px-4 border-b border-gray-300">
+            <span v-if="contact.qualified" class="inline-block font-semibold w-2.5 h-2.5 rounded-full bg-black mr-2 absolute" ></span>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             {{ contact.gender === 'm' ? 'Mn.' : 'Mne.' }}&nbsp;{{ contact.lastname }}
-            <span v-if="contact.qualified" class="text-blue-600 mr-2 float-end" ><i class="fas fa-check"></i></span>
           </td>
           <td class="py-2 px-4 border-b border-gray-300" >{{ contact.mobile }}</td>
           <td class="py-2 px-4 border-b border-gray-300" >{{ contact.email }}</td>
@@ -117,29 +118,24 @@
 </template>
 
 <script setup lang="ts">
-import axios from 'axios';
 import { onMounted, ref, nextTick } from 'vue';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net';
-import {Constant} from "@/app/constant/constant";
+import 'datatables.net-responsive';
 
 import {Contact} from "@/data/contact/model/Contact";
-import {fetchContactsFromApi} from "@/data/contact/service/contactService";
 import type {Alert} from "@/data/contact/service/model/contactApiModel";
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
-
-
-
 const contacts = ref<Contact[]>([]);
 const isLoading = ref(true);
 const message = ref('');
 const showDeleteModal = ref(false);
-const guidToDelete = ref<(string | number)[]>([]);
+const guidToDelete = ref<(number | null)[]>([]);
 const selectedContacts = ref([]);
-const activeMenu = ref< string | null >(null);
+const activeMenu = ref< number | null >();
 const alerts = ref<Alert[]>([]);
 
 
@@ -149,7 +145,7 @@ function updateMessage(newMessage: string) {
     message.value = ''; // Réinitialiser le message après 3 secondes
   }, 3000);
 }
-function toggleMenu(contactGuid: string | null) {
+function toggleMenu(contactGuid: number | null) {
   activeMenu.value = activeMenu.value === contactGuid ? null : contactGuid;
 }
 
@@ -160,40 +156,69 @@ document.addEventListener('click', (event) => {
     activeMenu.value = null;
   }
 });
+
 async function fetchContacts() {
   try {
-    const response = await fetchContactsFromApi();
+    const response = await Contact.fetchContactsFromApi();
     contacts.value =response || [];
     if ($.fn.DataTable.isDataTable('#contact-table')) {
       $('#contact-table').DataTable().destroy();
     }
     await nextTick();
 
+
     $("#contact-table").DataTable({
-      "ordering": false, // Assurez-vous que le tri est activé
-      "pageLength": 10, // Nombre d'entrées par page par défaut
-      "lengthMenu": [10, 25, 50, 100, 200], // Options de sélection du nombre d'entrées par page
-    });
+      responsive: true,
+      ordering: false,
+      pageLength: 10,
+      lengthMenu: [10, 25, 50, 100, 200]
+    } as any);
+
+    // $("#contact-table").DataTable({
+    //   "ordering": false,
+    //   "pageLength": 10,
+    //   "lengthMenu": [10, 25, 50, 100, 200],
+    //   // responsive: true,
+    // });
   } catch (error) {
     showMessage('Error when retrieving contacts.', 'error');
   } finally {
     isLoading.value = false;
   }
 }
-async function confirmDelete(guidArray: (string | number)[]) {
+
+async function confirmDelete(guidArray: number[]) {
   guidToDelete.value = guidArray;
   showDeleteModal.value = true;
 }
 
 async function deleteContact() {
   try {
-    await axios.put(`${Constant.APIENDPOINT}/contact/delete`, { guids: guidToDelete.value });
-    showMessage('Contact supprimé avec succès !');
+    for (const guid of guidToDelete.value) {
+      const contactToDelete = new Contact(
+        '', // firstname
+        '', // lastname
+        null, // mobile
+        null, // whatsapp
+        '',
+        '',
+        '',
+        '',
+        false,
+        undefined,
+        undefined,
+         undefined,
+        guid
+      );
+
+      await contactToDelete.deleteContact();
+    }
+    showMessage('Operation Successfull !','success');
     await fetchContacts();
     showDeleteModal.value = false;
   } catch (error) {
-    console.error("Erreur lors de la suppression du contact:", error);
-    showMessage('Erreur lors de la suppression du contact.');
+    console.error("Error during contact deletion:", error);
+    showMessage('Operation fail.', 'error');
   }
 }
 
@@ -223,31 +248,11 @@ const removeAlert = (id: string | number) => {
 const editContact = (contact: Contact) => {
   router.push({
     name: 'FormContact',
-    query: { guid: contact.guid.toString() },
-    state: {
-      firstname: contact.firstname,
-      lastname: contact.lastname,
-      mobile: contact.mobile,
-      whatsapp: contact.whatsapp,
-      email: contact.email,
-      location: contact.location,
-      language: contact.language,
-      gender: contact.gender,
-      qualified: contact.qualified
-
-    }
+    query: { guid: contact.guid?.toString() }
   });
-  activeMenu.value = null; // Ferme le menu
+  activeMenu.value = null;
 };
 
-// const editContact = (contact: Contact) => {
-//   router.push({
-//     name: 'FormContact',
-//     query: { guid: contact.guid.toString() },
-//     state: { contact: contact }
-//   });
-//   activeMenu.value = null; // Ferme le menu
-// };
 
 onMounted(fetchContacts);
 </script>

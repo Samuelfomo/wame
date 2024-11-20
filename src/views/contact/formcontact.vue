@@ -95,16 +95,23 @@
           <input v-model="qualified" type="checkbox" id="qualified" class="h-5 w-5 text-indigo-600 border-gray-300 rounded">
         </div>
     </div>
+          <br/><br/>
 
-
-        <!-- Bouton d'envoi -->
+        <!-- Bouton-->
         <div class="col-span-2 text-right">
+          <!-- Bouton d'envoi -->
           <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
             Enregistrer
           </button>
         </div>
 
       </form>
+        <!-- Bouton annule -->
+        <div class="col-span-2 text-right">
+          <button class="px-4 py-2 bg-red-600 font-semibold text-white rounded hover:bg-red-800 float-left" @click="guid ? router.push('/contact') : clearForm()" style="margin-top: -42px">
+            Annuler
+          </button>
+        </div>
     </div>
   </div>
   </div>
@@ -114,7 +121,7 @@
 import { ref, onMounted } from 'vue';
 import type { Alert } from "@/data/contact/service/model/contactApiModel";
 import { useRouter, useRoute } from 'vue-router';
-import { saveContact, fetchContactByGuid, fetchContactExist } from "@/data/contact/service/contactService";
+import {Contact} from "@/data/contact/model/Contact";
 
 
 const router = useRouter();
@@ -125,7 +132,7 @@ const firstname = ref('');
 const lastname = ref('');
 const mobile = ref<number | null>(null);
 const email = ref('');
-const whatsapp = ref<number | null | undefined>(null);
+const whatsapp = ref<number | null>(null);
 const location = ref('');
 const gender = ref('');
 const language = ref('');
@@ -134,58 +141,37 @@ const qualified = ref(false);
 const alerts = ref<Alert[]>([]);
 
 
-async function registerOrUpdateContact() {
-  if (!lastname.value || !mobile.value) {
-    showMessage("Les champs 'Nom' et 'Mobile' sont obligatoires.");
-    return;
-  }
-
-  if (!guid.value) {
-    // Vérifie si le contact existe
-    const exists = await fetchContactExist(mobile.value, email.value);
-
-    console.log("Contact Exists:", exists);
-
-    if (exists) {
-      showMessage("Un contact avec ce numéro de mobile ou email existe déjà.", 'error');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return;
-    }
-    else {
-      showMessage("Un nouveau contact cree.");
-    }
-  }
-
-  const postData = {
-    firstname: firstname.value,
-    lastname: lastname.value,
-    mobile: mobile.value,
-    whatsapp: Number(whatsapp.value),
-    email: email.value,
-    location: location.value,
-    gender: gender.value,
-    qualified: qualified.value,
-    language: language.value,
-    guid: guid.value
-  };
+async function registerOrUpdateContact(){
+  const contact = new Contact(
+    firstname.value,
+    lastname.value,
+    mobile.value,
+    whatsapp.value,
+    email.value,
+    gender.value ,
+    language.value,
+    location.value,
+    qualified.value,
+    new Date() || undefined,
+    undefined,
+    undefined,
+    guid.value || null
+  );
 
   try {
-    const savedContact = await saveContact(postData);
+    const savedContact = await contact.saveOrUpdateContact();
     if (savedContact) {
       showMessage(guid.value ? 'Modification réussie' : 'Enregistrement réussi');
-      if(guid.value){
+      if (guid.value) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         await router.push('/contact');
+      } else {
+        await clearForm();
       }
-      else{
-       await clearForm();
-      }
-
-    } else {
-      showMessage(guid.value ? "Modification échouée" : "Enregistrement échoué", 'error');
     }
-  } catch (error) {
-    showMessage("Erreur lors de l'opération", 'error');
+  } catch (error: unknown) {
+    const message=(error as Error).message || "Erreur lors de l'opération";
+    showMessage(message,'error');
   }
 }
 
@@ -230,9 +216,11 @@ if (props.contact) {
 
 const loadContactData = async (guidParam: number) => {
   try {
-    const contact = await fetchContactByGuid(guidParam);
-    if (contact) {
-      guid.value = Number(contact.guid);
+    const contact = new Contact('', '', null, null, '', '', '', '', false, undefined, undefined, undefined, guidParam);
+    const success = await contact.loadContactData();
+
+    if (success) {
+      guid.value = contact.guid;
       firstname.value = contact.firstname;
       lastname.value = contact.lastname;
       mobile.value = contact.mobile;
@@ -249,24 +237,9 @@ const loadContactData = async (guidParam: number) => {
 };
 
 onMounted(async () => {
-  const guidFromQuery = route.query.guid as number;
+  const guidFromQuery = route.query.guid as string;
   if (guidFromQuery) {
-    await loadContactData(guidFromQuery);
-  }
-
-  // Alternative: utiliser l'état de la route si le contact complet a été passé
-  const contactFromState = router.currentRoute.value.state?.contact;
-  if (contactFromState) {
-    guid.value = contactFromState.guid;
-    firstname.value = contactFromState.firstname;
-    lastname.value = contactFromState.lastname;
-    mobile.value = contactFromState.mobile;
-    whatsapp.value = contactFromState.whatsapp;
-    email.value = contactFromState.email;
-    location.value = contactFromState.location;
-    gender.value = contactFromState.gender;
-    language.value = contactFromState.language;
-    qualified.value = contactFromState.qualified;
+    await loadContactData(Number(guidFromQuery));
   }
 });
 
