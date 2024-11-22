@@ -48,7 +48,6 @@
       <table id="lexicon-table" class="min-w-full bg-white rounded table-class">
         <thead>
         <tr>
-          <!--          <th></th>-->
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Référence</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Anglais</th>
           <th class="py-2 px-4 bg-gray-100 border-b border-gray-300 text-left text-sm text-gray-600">Français</th>
@@ -89,6 +88,34 @@
         </tr>
         </tbody>
       </table>
+
+      <!-- Skeleton Loader -->
+      <div v-if="isLoading" class="animate-pulse">
+        <div class="flex justify-between mb-4">
+          <div class="h-6 bg-gray-300 w-1/4 rounded"></div>
+          <div class="flex space-x-2">
+            <div class="h-10 w-10 bg-gray-300 rounded"></div>
+            <div class="h-10 w-10 bg-gray-300 rounded"></div>
+          </div>
+        </div>
+        <table class="min-w-full">
+          <thead>
+          <tr>
+            <th v-for="n in 7" :key="n" class="py-2 px-4 bg-gray-200 border-b">
+              <div class="h-4 bg-gray-300 w-3/4 rounded"></div>
+            </th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="n in 5" :key="n">
+            <td v-for="m in 7" :key="m" class="py-2 px-4 border-b">
+              <div class="h-4 bg-gray-200 w-full rounded"></div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
 
     <!-- Modal pour Ajouter/Modifier -->
@@ -222,6 +249,7 @@ const closeModal = () => {
  */
 async function fetchLexicons() {
   try {
+    isLoading.value = true;
     const response = await fetchLexiconsFromApi();
     lexicons.value = response || [];
     if ($.fn.DataTable.isDataTable('#lexicon-table')) {
@@ -452,6 +480,21 @@ th {
   color: white;
   padding: 12px;
   text-align: left;
+}
+
+.animate-pulse .bg-gray-200,
+.animate-pulse .bg-gray-300 {
+  background-color: #e5e7eb;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 </style>

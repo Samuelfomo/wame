@@ -4,7 +4,7 @@ import axios from "axios";
 import {Constant} from "@/app/constant/constant";
 
 class Contact {
-  public id: number;
+  public id: number | undefined;
   public guid: number | null;
   public firstname: string;
   public lastname: string;
@@ -33,7 +33,7 @@ class Contact {
     id?: number,
     guid?: number | null
   ) {
-    this.id = id || 0;
+    this.id = id;
     this.guid = guid || null;
     this.firstname = firstname || '';
     this.lastname = lastname || '';

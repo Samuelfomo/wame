@@ -55,6 +55,7 @@ import Modal from '../views/Modal.vue'
 import Card from '../views/Card.vue'
 import Blank from '@/views/Blank.vue'
 import FormContact from '@/views/contact/formcontact.vue'
+import Register from "@/views/register.vue";
 
 
 const routes: RouteRecordRaw[] = [
@@ -73,6 +74,11 @@ const routes: RouteRecordRaw[] = [
     path: '/forms',
     name: 'Forms',
     component: Forms,
+  },
+  {
+    path: '/user',
+    name: 'NewUser',
+    component: Register,
   },
   {
     path: '/cards',
